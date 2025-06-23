@@ -5,7 +5,7 @@ import re
 import random
 from telebot import types
 
-API_TOKEN = 'token'
+API_TOKEN = '7640107599:AAFjRUgButnfq6t4_reOoz57aVxXsVQMfeY'
 bot = telebot.TeleBot(API_TOKEN)
 
 DB_FILE = "points.json"
