@@ -95,7 +95,7 @@ def points_menu(message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.row("🎯 تسجيل بنقاط", "📝 تسجيل عادي")
     keyboard.row("📊 عرض النقاط", "🏆 عرض الفائزين")
-    keyboard.row("➖ خصم نقطة", "🧹 مسح النقاط")
+    keyboard.row("➖ خصم نقطة", "🧹 مسح")
     keyboard.row("📋 قائمة التسجيل العادي", "✏️ تعديل المشاركين")
     keyboard.row("🔙 رجوع")
     bot.send_message(message.chat.id, "📊 قائمة إدارة النقاط:", reply_markup=keyboard)
@@ -345,7 +345,7 @@ def templates_menu(message):
 @bot.message_handler(func=lambda m: m.text == "⚙️ الإعدادات")
 def settings_menu(message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row("🎥 شرح البوت", "🔄 تحديث البوت")
+    keyboard.row("شرح البوت", "🔄 تحديث البوت")
     keyboard.row("🔙 رجوع")
     bot.send_message(message.chat.id, "⚙️ قائمة الإعدادات:", reply_markup=keyboard)
 
@@ -591,12 +591,12 @@ def process_raffle_winners_count(message):
     result = "\n".join([f"🏅 @{winner}" for winner in winners])
     bot.reply_to(message, f"🎉 الفائزون:\n{result}")
 
-@bot.message_handler(func=lambda m: m.text == "🧹 مسح النقاط")
+@bot.message_handler(func=lambda m: m.text == "🧹 مسح")
 def clear_points(message):
     chat_id = str(message.chat.id)
     all_points[chat_id] = {}
     save_points()
-    bot.reply_to(message, "✅ تم مسح جميع النقاط")
+    bot.reply_to(message, "✅ تم المسح")
 
 @bot.message_handler(func=lambda m: m.text == "🧹 مسح الكل")
 def clear_all(message):
@@ -684,7 +684,7 @@ def ask_template_to_set(message):
         markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"tpl_{idx}"))
     bot.send_message(message.chat.id, "📌 اختر قالباً لتعيينه:", reply_markup=markup)
 
-@bot.message_handler(func=lambda m: m.text == "🎥 شرح البوت")
+@bot.message_handler(func=lambda m: m.text == "شرح البوت")
 def send_bot_tutorial(message):
     bot.reply_to(message, "شرح استخدام البوت:\n\n"
                          "- 📊 إدارة النقاط: لتسجيل وعرض النقاط\n"
@@ -700,5 +700,5 @@ def update_bot(message):
 
 if __name__ == '__main__':
     all_points = load_data()
-    print("✅ تم تشغيل البوت بنجاح...")
+    print("[✓] Bot is running...")
     bot.infinity_polling()
