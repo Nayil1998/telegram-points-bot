@@ -86,24 +86,25 @@ def display_points(chat_id: str) -> str:
     if not users:
         return template + "\nلا توجد نقاط بعد"
     
-    # الحد الأقصى لطول الرسالة (256 حرف)
     MAX_LENGTH = 256
     result = []
-    current_chunk = template
+    current_chunk = template + "\n- {1}\n"
+    part_number = 1
     
     for user in users:
-        # حساب الطول إذا أضفنا هذا المستخدم
-        potential_text = current_chunk + (" | " if not current_chunk.endswith(template) else "") + user
+        user_entry = f"{user} | "
+        potential_text = current_chunk + user_entry
         
         if len(potential_text) <= MAX_LENGTH:
             current_chunk = potential_text
         else:
-            # حفظ الجزء الحالي وبدء جزء جديد
+            current_chunk = current_chunk.rstrip(" | ")
             result.append(current_chunk)
-            current_chunk = template + "\n" + user
+            part_number += 1
+            current_chunk = template + f"\n- {{{part_number}}}\n{user} | "
     
-    # إضافة الجزء الأخير إذا كان غير فارغ
-    if current_chunk != template:
+    if current_chunk != template + f"\n- {{{part_number}}}\n":
+        current_chunk = current_chunk.rstrip(" | ")
         result.append(current_chunk)
     
     return "\n\n".join(result)
