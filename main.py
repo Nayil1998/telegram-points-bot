@@ -747,7 +747,7 @@ def setup_bot():
     bot.remove_webhook()
     
     # تعيين Webhook جديد
-    webhook_url = os.getenv('url="https://telegram-points-bot.onrender.com/7640107599:AAHWD3bVRu_5u9aeFmnAet5IltiZiJzRK_M")
+    webhook_url = os.getenv('WEBHOOK_URL', 'https://telegram-points-bot.onrender.com/webhook')
     bot.set_webhook(url=webhook_url)
 
 if __name__ == '__main__':
