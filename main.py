@@ -2,7 +2,7 @@ from flask import Flask, request
 import telebot
 
 # التوكن مكتوب مباشرة كمثال
-API_TOKEN = '7640107599:AAHj39sJCa6-PgWrL_JwToKAriESzpFvnm8'
+API_TOKEN = 7640107599:AAHWD3bVRu_5u9aeFmnAet5IltiZiJzRK_M'
 bot = telebot.TeleBot(API_TOKEN)
 
 app = Flask(__name__)
