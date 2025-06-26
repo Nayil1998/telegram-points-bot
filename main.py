@@ -82,7 +82,31 @@ def display_points(chat_id: str) -> str:
     chat_points = all_points.get(chat_id, {})
     sorted_users = sorted(chat_points.items(), key=lambda x: x[1], reverse=True)
     users = [f"@{u}{to_superscript(c)}" for u, c in sorted_users]
-    return template + "\n" + " | ".join(users) if users else "لا توجد نقاط بعد"
+    
+    if not users:
+        return template + "\nلا توجد نقاط بعد"
+    
+    # الحد الأقصى لطول الرسالة (256 حرف)
+    MAX_LENGTH = 256
+    result = []
+    current_chunk = template
+    
+    for user in users:
+        # حساب الطول إذا أضفنا هذا المستخدم
+        potential_text = current_chunk + (" | " if not current_chunk.endswith(template) else "") + user
+        
+        if len(potential_text) <= MAX_LENGTH:
+            current_chunk = potential_text
+        else:
+            # حفظ الجزء الحالي وبدء جزء جديد
+            result.append(current_chunk)
+            current_chunk = template + "\n" + user
+    
+    # إضافة الجزء الأخير إذا كان غير فارغ
+    if current_chunk != template:
+        result.append(current_chunk)
+    
+    return "\n\n".join(result)
 
 ## Handlers البوت ##
 
@@ -742,17 +766,17 @@ def setup_bot():
     # تحميل البيانات عند التشغيل
     global all_points
     all_points = load_data()
-    
+
     # إزالة أي Webhook قديم
     bot.remove_webhook()
-    
+
     # تعيين Webhook جديد
     webhook_url = os.getenv('WEBHOOK_URL', 'https://api.telegram.org/bot7640107599:AAHWD3bVRu_5u9aeFmnAet5IltiZiJzRK_M/setWebhook?url=https://telegram-points-bot-i04f.onrender.com/webhook')
     bot.set_webhook(url=webhook_url)
 
 if __name__ == '__main__':
     setup_bot()
-    
+
     # تشغيل التطبيق
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
