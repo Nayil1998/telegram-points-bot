@@ -25,6 +25,22 @@ editing_raffle = set()
 editing_points = set()
 random_order_mode = set()
 
+def is_valid_username(username):
+    """تحقق من أن اسم المستخدم إنجليزي ولا يحتوي على أحرف عربية"""
+    return re.fullmatch(r'^[a-zA-Z0-9_]{3,32}$', username)
+
+def is_command(text):
+    """تحقق مما إذا كان النص أمراً من أوامر البوت"""
+    commands = [
+        '/start', '/help', '🔙 رجوع', '🎯 تسجيل بنقاط', '📝 تسجيل عادي',
+        '📊 عرض النقاط', '🏆 عرض الفائزين', '➖ خصم نقطة', '🧹 مسح',
+        '📋 قائمة التسجيل العادي', '✏️ تعديل المشاركين', '🎲 تسجيل قرعة',
+        '📋 قائمة المسجلين', '🎲 سحب الفائزين', '🔀 ترتيب عشوائي', '🧹 مسح الكل',
+        '➕ إضافة قالب', '📂 عرض القوالب', '🗑️ حذف قالب', '📌 تعيين قالب',
+        'ℹ️ شرح استخدام البوت', '🔄 تحديث البوت'
+    ]
+    return text.strip() in commands
+
 def load_data():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, 'r', encoding='utf-8') as f:
@@ -158,11 +174,19 @@ def handle_points_edits(message):
 
 def process_add_participant_points(message):
     chat_id = str(message.chat.id)
-    username = message.text.strip().replace("@", "")
+    user_input = message.text.strip()
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        bot.reply_to(message, "صيغة اسم المستخدم غير صالحة")
-        start_editing_points(message)
+    if is_command(user_input):
+        if user_input == "🔙 رجوع":
+            adding_to_points.discard(chat_id)
+            points_menu(message)
+        return
+
+    username = user_input.replace("@", "")
+
+    if not is_valid_username(username):
+        msg = bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح (أحرف لاتينية، أرقام و _ فقط)")
+        bot.register_next_step_handler(msg, process_add_participant_points)
         return
 
     if chat_id not in all_points:
@@ -181,6 +205,11 @@ def process_remove_participant_points(message):
     chat_id = str(message.chat.id)
     username = message.text.strip().replace("@", "")
 
+    if not is_valid_username(username):
+        bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح")
+        start_editing_points(message)
+        return
+
     if chat_id not in all_points or username not in all_points[chat_id]:
         bot.reply_to(message, f"@{username} غير موجود في المشاركين")
         start_editing_points(message)
@@ -195,6 +224,11 @@ def process_ask_points_amount(message, username=None):
     chat_id = str(message.chat.id)
     if username is None:
         username = message.text.strip().replace("@", "")
+
+        if not is_valid_username(username):
+            bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح")
+            start_editing_points(message)
+            return
 
         if chat_id not in all_points or username not in all_points[chat_id]:
             bot.reply_to(message, f"@{username} غير موجود في المشاركين")
@@ -291,11 +325,19 @@ def handle_raffle_edits(message):
 
 def process_add_participant(message):
     chat_id = str(message.chat.id)
-    username = message.text.strip().replace("@", "")
+    user_input = message.text.strip()
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        bot.reply_to(message, "صيغة اسم المستخدم غير صالحة")
-        start_editing_raffle(message)
+    if is_command(user_input):
+        if user_input == "🔙 رجوع":
+            adding_to_raffle.discard(chat_id)
+            raffle_menu(message)
+        return
+
+    username = user_input.replace("@", "")
+
+    if not is_valid_username(username):
+        msg = bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح (أحرف لاتينية، أرقام و _ فقط)")
+        bot.register_next_step_handler(msg, process_add_participant)
         return
 
     if chat_id not in all_points:
@@ -314,6 +356,11 @@ def process_remove_participant(message):
     chat_id = str(message.chat.id)
     username = message.text.strip().replace("@", "")
 
+    if not is_valid_username(username):
+        bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح")
+        start_editing_raffle(message)
+        return
+
     if chat_id not in all_points or username not in all_points[chat_id]:
         bot.reply_to(message, f"@{username} غير موجود في المشاركين")
         start_editing_raffle(message)
@@ -324,139 +371,6 @@ def process_remove_participant(message):
     bot.reply_to(message, display_points(chat_id))
     start_editing_raffle(message)
 
-@bot.message_handler(func=lambda m: m.text == "📝 إدارة القوالب")
-def templates_menu(message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row("➕ إضافة قالب", "📂 عرض القوالب")
-    keyboard.row("🗑️ حذف قالب", "📌 تعيين قالب")
-    keyboard.row("🔙 رجوع")
-    bot.send_message(message.chat.id, "📝 قائمة إدارة القوالب:", reply_markup=keyboard)
-
-@bot.message_handler(func=lambda m: m.text == "📂 عرض القوالب")
-def show_templates_button(message):
-    templates = load_templates()
-    if not templates:
-        bot.reply_to(message, "❗ لا توجد قوالب محفوظة")
-        return
-
-    markup = types.InlineKeyboardMarkup()
-    for idx, template in enumerate(templates):
-        btn_text = template[:20] + "..." if len(template) > 20 else template
-        markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"tpl_{idx}"))
-    bot.send_message(message.chat.id, "📂 اختر أحد القوالب التالية:", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("tpl_"))
-def handle_template_selection(call):
-    try:
-        idx = int(call.data.split("_")[1])
-        templates = load_templates()
-
-        if 0 <= idx < len(templates):
-            template = templates[idx]
-            set_current_template(template)
-            bot.answer_callback_query(call.id, text="✅ تم اختيار القالب")
-            bot.edit_message_text(chat_id=call.message.chat.id, 
-                                message_id=call.message.message_id,
-                                text=f"✅ تم اختيار القالب:\n{template}")
-        else:
-            bot.answer_callback_query(call.id, text="⚠️ القالب غير موجود")
-    except:
-        bot.answer_callback_query(call.id, text="⚠️ حدث خطأ")
-
-@bot.message_handler(func=lambda m: m.text == "⚙️ الإعدادات")
-def settings_menu(message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row("ℹ️ شرح استخدام البوت", "🔄 تحديث البوت")
-    keyboard.row("🔙 رجوع")
-    bot.send_message(message.chat.id, "⚙️ قائمة الإعدادات:", reply_markup=keyboard)
-
-@bot.message_handler(func=lambda m: m.text == "ℹ️ شرح استخدام البوت")
-def send_bot_tutorial(message):
-    tutorial_text = """
-شرح طريقة الاستخدم 📝
-
-للاستفسارات أو الدعم: [@BLvjM](https://t.me/BLvjM)
-
-🔍 الوظائف الأساسية:
-
-📊 إدارة النقاط:
-🎯 تسجيل بنقاط - إضافة مشارك مع منحه نقطة
-📝 تسجيل عادي - إضافة مشارك بدون نقاط
-📊 عرض النقاط - رؤية الترتيب الحالي
-🏆 عرض الفائزين - عرض الأعلى نقاطاً
-➖ خصم نقطة - إنقاص نقطة من مشارك
-
-🎲 نظام القرعة:
-🎲 تسجيل قرعة - إضافة مشاركين للسحب
-🎲 سحب الفائزين - اختيار فائزين عشوائيين
-🔀 ترتيب عشوائي - عرض المشاركين بترتيب عشوائي
-
-🎨 تخصيص القوالب:
-➕ إضافة قالب - إنشاء تصاميم جديدة
-📌 تعيين قالب - اختيار شكل العرض
-🗑️ حذف قالب - إزالة القوالب غير المستخدمة
-
-⚙️ أدوات التحكم:
-🧹 مسح - حذف جميع البيانات
-✏️ تعديل المشاركين - تغيير بيانات المشاركين
-📋 قوائم المسجلين - عرض جميع المشاركين
-
-💡 نصائح سريعة:
-- استخدم قوائم المسجلين لمشاهدة الجميع
-- اضغط رجوع للعودة للقائمة السابقة
-- يمكنك تعديل النقاط أو الحذف بسهولة
-"""
-    bot.send_message(message.chat.id, tutorial_text, parse_mode='Markdown')
-
-@bot.message_handler(func=lambda m: m.text == "🔙 رجوع")
-def back_to_main(message):
-    chat_id = str(message.chat.id)
-    adding_to_raffle.discard(chat_id)
-    adding_to_points.discard(chat_id)
-    adding_to_normal.discard(chat_id)
-    editing_raffle.discard(chat_id)
-    editing_points.discard(chat_id)
-    random_order_mode.discard(chat_id)
-    handle_start(message)
-
-@bot.message_handler(func=lambda m: m.text == "🔀 ترتيب عشوائي")
-def random_order_menu(message):
-    chat_id = str(message.chat.id)
-    random_order_mode.add(chat_id)
-
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row("🔄 توليد ترتيب", "📋 عرض الترتيب")
-    keyboard.row("🔙 رجوع")
-
-    bot.send_message(message.chat.id, "🔀 وضع الترتيب العشوائي:", reply_markup=keyboard)
-
-@bot.message_handler(func=lambda m: m.text == "🔄 توليد ترتيب" and str(m.chat.id) in random_order_mode)
-def generate_random_order(message):
-    chat_id = str(message.chat.id)
-
-    if chat_id not in all_points or not all_points[chat_id]:
-        bot.reply_to(message, "لا يوجد مشاركين متاحين")
-        return
-
-    participants = list(all_points[chat_id].keys())
-    random.shuffle(participants)
-    random_orders[chat_id] = participants
-    show_order(message, participants)
-
-@bot.message_handler(func=lambda m: m.text == "📋 عرض الترتيب" and str(m.chat.id) in random_order_mode)
-def show_random_order(message):
-    chat_id = str(message.chat.id)
-
-    if chat_id not in random_orders:
-        bot.reply_to(message, "لا يوجد ترتيب متاح، يرجى توليد ترتيب أولاً")
-        return
-
-    show_order(message, random_orders[chat_id])
-
-def show_order(message, participants):
-    order_list = "\n".join([f"{i+1}. @{username}" for i, username in enumerate(participants)])
-    bot.reply_to(message, f"🔀 الترتيب العشوائي:\n\n{order_list}\n\nالمجموع: {len(participants)} مشارك")
-
 @bot.message_handler(func=lambda m: m.text == "🎲 تسجيل قرعة")
 def start_adding_to_raffle(message):
     chat_id = str(message.chat.id)
@@ -466,16 +380,18 @@ def start_adding_to_raffle(message):
 
 def process_raffle_register_loop(message):
     chat_id = str(message.chat.id)
+    user_input = message.text.strip()
 
-    if message.text == "🔙 رجوع":
-        adding_to_raffle.discard(chat_id)
-        raffle_menu(message)
+    if is_command(user_input):
+        if user_input == "🔙 رجوع":
+            adding_to_raffle.discard(chat_id)
+            raffle_menu(message)
         return
 
-    username = message.text.strip().replace("@", "")
+    username = user_input.replace("@", "")
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        msg = bot.reply_to(message, "❗ يرجى إرسال يوزر إنجليزي صحيح")
+    if not is_valid_username(username):
+        msg = bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح (أحرف لاتينية، أرقام و _ فقط)")
         bot.register_next_step_handler(msg, process_raffle_register_loop)
         return
 
@@ -489,7 +405,7 @@ def process_raffle_register_loop(message):
         save_points()
         bot.reply_to(message, display_points(chat_id))
 
-    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
+    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر (أو 🔙 رجوع للخروج):")
     bot.register_next_step_handler(msg, process_raffle_register_loop)
 
 @bot.message_handler(func=lambda m: m.text == "🎯 تسجيل بنقاط")
@@ -501,16 +417,18 @@ def start_adding_points(message):
 
 def process_points_register_loop(message):
     chat_id = str(message.chat.id)
+    user_input = message.text.strip()
 
-    if message.text == "🔙 رجوع":
-        adding_to_points.discard(chat_id)
-        points_menu(message)
+    if is_command(user_input):
+        if user_input == "🔙 رجوع":
+            adding_to_points.discard(chat_id)
+            points_menu(message)
         return
 
-    username = message.text.strip().replace("@", "")
+    username = user_input.replace("@", "")
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        msg = bot.reply_to(message, "❗ يرجى إرسال يوزر إنجليزي صحيح")
+    if not is_valid_username(username):
+        msg = bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح (أحرف لاتينية، أرقام و _ فقط)")
         bot.register_next_step_handler(msg, process_points_register_loop)
         return
 
@@ -521,7 +439,7 @@ def process_points_register_loop(message):
     save_points()
     bot.reply_to(message, display_points(chat_id))
 
-    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
+    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر (أو 🔙 رجوع للخروج):")
     bot.register_next_step_handler(msg, process_points_register_loop)
 
 @bot.message_handler(func=lambda m: m.text == "📝 تسجيل عادي")
@@ -533,16 +451,18 @@ def start_adding_normal(message):
 
 def process_normal_register_loop(message):
     chat_id = str(message.chat.id)
+    user_input = message.text.strip()
 
-    if message.text == "🔙 رجوع":
-        adding_to_normal.discard(chat_id)
-        points_menu(message)
+    if is_command(user_input):
+        if user_input == "🔙 رجوع":
+            adding_to_normal.discard(chat_id)
+            points_menu(message)
         return
 
-    username = message.text.strip().replace("@", "")
+    username = user_input.replace("@", "")
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        msg = bot.reply_to(message, "❗ يرجى إرسال يوزر إنجليزي صحيح")
+    if not is_valid_username(username):
+        msg = bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح (أحرف لاتينية، أرقام و _ فقط)")
         bot.register_next_step_handler(msg, process_normal_register_loop)
         return
 
@@ -556,7 +476,7 @@ def process_normal_register_loop(message):
         save_points()
         bot.reply_to(message, display_points(chat_id))
 
-    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
+    msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر (أو 🔙 رجوع للخروج):")
     bot.register_next_step_handler(msg, process_normal_register_loop)
 
 @bot.message_handler(func=lambda m: m.text == "📋 قائمة المسجلين")
@@ -668,8 +588,8 @@ def process_deduction(message):
     chat_id = str(message.chat.id)
     username = message.text.strip().replace("@", "")
 
-    if not re.fullmatch(r'^[A-Za-z0-9_]{3,32}$', username):
-        bot.reply_to(message, "❗ يرجى إرسال يوزر إنجليزي صحيح")
+    if not is_valid_username(username):
+        bot.reply_to(message, "❗ يرجى إرسال اسم مستخدم إنجليزي صحيح")
         return
 
     if chat_id not in all_points or username not in all_points[chat_id]:
