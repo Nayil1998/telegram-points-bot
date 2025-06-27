@@ -8,17 +8,14 @@ from telebot import types
 
 app = Flask(__name__)
 
-# التوكن - استبدله بتوكن بوتك أو اضبطه كمتغير بيئة
 API_TOKEN = os.getenv('TELEGRAM_TOKEN', '7640107599:AAHWD3bVRu_5u9aeFmnAet5IltiZiJzRK_M')
 bot = telebot.TeleBot(API_TOKEN)
 
-# ملفات البيانات
 DB_FILE = "points.json"
 TEMPLATE_FILE = "template.txt"
 TEMPLATES_FILE = "templates.json"
 DEFAULT_TEMPLATE = "✿🧸.݁𝗣𝗢𝗜𝗡𝗧𝗦 ⁞‏"
 
-# المتغيرات العامة
 all_points = {}
 random_orders = {}
 adding_to_raffle = set()
@@ -27,8 +24,6 @@ adding_to_normal = set()
 editing_raffle = set()
 editing_points = set()
 random_order_mode = set()
-
-## الدوال المساعدة ##
 
 def load_data():
     if os.path.exists(DB_FILE):
@@ -82,19 +77,19 @@ def display_points(chat_id: str) -> str:
     chat_points = all_points.get(chat_id, {})
     sorted_users = sorted(chat_points.items(), key=lambda x: x[1], reverse=True)
     users = [f"@{u}{to_superscript(c)}" for u, c in sorted_users]
-
+    
     if not users:
         return template + "\nلا توجد نقاط بعد"
-
-    MAX_LENGTH = 240
+    
+    MAX_LENGTH = 256
     result = []
     current_chunk = template + "\n- {1}\n"
     part_number = 1
-
+    
     for user in users:
         user_entry = f"{user} | "
         potential_text = current_chunk + user_entry
-
+        
         if len(potential_text) <= MAX_LENGTH:
             current_chunk = potential_text
         else:
@@ -102,14 +97,12 @@ def display_points(chat_id: str) -> str:
             result.append(current_chunk)
             part_number += 1
             current_chunk = template + f"\n- {{{part_number}}}\n{user} | "
-
+    
     if current_chunk != template + f"\n- {{{part_number}}}\n":
         current_chunk = current_chunk.rstrip(" | ")
         result.append(current_chunk)
-
+    
     return "\n\n".join(result)
-
-## Handlers البوت ##
 
 @bot.message_handler(commands=['start', 'help'])
 def handle_start(message):
@@ -313,7 +306,7 @@ def process_add_participant(message):
     else:
         all_points[chat_id][username] = 0
         save_points()
-        bot.reply_to(message, f"✅ تمت إضافة @{username} بنجاح")
+        bot.reply_to(message, display_points(chat_id))
 
     start_editing_raffle(message)
 
@@ -328,7 +321,7 @@ def process_remove_participant(message):
 
     del all_points[chat_id][username]
     save_points()
-    bot.reply_to(message, f"✅ تم حذف @{username} بنجاح")
+    bot.reply_to(message, display_points(chat_id))
     start_editing_raffle(message)
 
 @bot.message_handler(func=lambda m: m.text == "📝 إدارة القوالب")
@@ -494,7 +487,7 @@ def process_raffle_register_loop(message):
     else:
         all_points[chat_id][username] = 0
         save_points()
-        bot.reply_to(message, f"")
+        bot.reply_to(message, display_points(chat_id))
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_raffle_register_loop)
@@ -526,7 +519,7 @@ def process_points_register_loop(message):
 
     all_points[chat_id][username] = all_points[chat_id].get(username, 0) + 1
     save_points()
-    bot.reply_to(message, f"")
+    bot.reply_to(message, display_points(chat_id))
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_points_register_loop)
@@ -561,7 +554,7 @@ def process_normal_register_loop(message):
     else:
         all_points[chat_id][username] = 0
         save_points()
-        bot.reply_to(message, f"")
+        bot.reply_to(message, display_points(chat_id))
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_normal_register_loop)
@@ -748,8 +741,6 @@ def update_bot(message):
     bot.reply_to(message, "✅ تم تحديث البوت بنجاح")
     handle_start(message)
 
-## Webhook Routes ##
-
 @app.route('/')
 def home():
     return "✅ Bot is running!", 200
@@ -764,20 +755,13 @@ def telegram_webhook():
     return 'Invalid request', 403
 
 def setup_bot():
-    # تحميل البيانات عند التشغيل
     global all_points
     all_points = load_data()
-
-    # إزالة أي Webhook قديم
     bot.remove_webhook()
-
-    # تعيين Webhook جديد
     webhook_url = os.getenv('WEBHOOK_URL', 'https://api.telegram.org/bot7640107599:AAHWD3bVRu_5u9aeFmnAet5IltiZiJzRK_M/setWebhook?url=https://telegram-points-bot-i04f.onrender.com/webhook')
     bot.set_webhook(url=webhook_url)
 
 if __name__ == '__main__':
     setup_bot()
-
-    # تشغيل التطبيق
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
