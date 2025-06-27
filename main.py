@@ -86,7 +86,7 @@ def display_points(chat_id: str) -> str:
     if not users:
         return template + "\nلا توجد نقاط بعد"
 
-    MAX_LENGTH = 256
+    MAX_LENGTH = 240
     result = []
     current_chunk = template + "\n- {1}\n"
     part_number = 1
