@@ -82,19 +82,19 @@ def display_points(chat_id: str) -> str:
     chat_points = all_points.get(chat_id, {})
     sorted_users = sorted(chat_points.items(), key=lambda x: x[1], reverse=True)
     users = [f"@{u}{to_superscript(c)}" for u, c in sorted_users]
-    
+
     if not users:
         return template + "\nلا توجد نقاط بعد"
-    
+
     MAX_LENGTH = 256
     result = []
     current_chunk = template + "\n- {1}\n"
     part_number = 1
-    
+
     for user in users:
         user_entry = f"{user} | "
         potential_text = current_chunk + user_entry
-        
+
         if len(potential_text) <= MAX_LENGTH:
             current_chunk = potential_text
         else:
@@ -102,11 +102,11 @@ def display_points(chat_id: str) -> str:
             result.append(current_chunk)
             part_number += 1
             current_chunk = template + f"\n- {{{part_number}}}\n{user} | "
-    
+
     if current_chunk != template + f"\n- {{{part_number}}}\n":
         current_chunk = current_chunk.rstrip(" | ")
         result.append(current_chunk)
-    
+
     return "\n\n".join(result)
 
 ## Handlers البوت ##
@@ -494,7 +494,7 @@ def process_raffle_register_loop(message):
     else:
         all_points[chat_id][username] = 0
         save_points()
-        bot.reply_to(message, f"✅ تم تسجيل @{username} في القرعة")
+        bot.reply_to(message, f"")
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_raffle_register_loop)
@@ -526,7 +526,7 @@ def process_points_register_loop(message):
 
     all_points[chat_id][username] = all_points[chat_id].get(username, 0) + 1
     save_points()
-    bot.reply_to(message, f"✅ تم تسجيل @{username} مع إضافة نقطة\n{display_points(chat_id)}")
+    bot.reply_to(message, f"")
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_points_register_loop)
@@ -561,7 +561,7 @@ def process_normal_register_loop(message):
     else:
         all_points[chat_id][username] = 0
         save_points()
-        bot.reply_to(message, f"✅ تم تسجيل @{username} بدون نقاط")
+        bot.reply_to(message, f"")
 
     msg = bot.reply_to(message, "✏️ أرسل اسم مستخدم آخر:")
     bot.register_next_step_handler(msg, process_normal_register_loop)
