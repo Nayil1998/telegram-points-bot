@@ -82,9 +82,9 @@ def display_points(chat_id: str) -> str:
     if not users:
         return template + "\nلا توجد نقاط بعد"
 
-    MAX_LENGTH = 180
+    MAX_LENGTH = 200
     result = []
-    current_chunk = template + "\n- {1}\n"
+    current_chunk = template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━\n"
     part_number = 1
 
     for user in users:
@@ -97,7 +97,7 @@ def display_points(chat_id: str) -> str:
             current_chunk = current_chunk.rstrip(" | ")
             result.append(current_chunk)
             part_number += 1
-            current_chunk = template + f"\n- {{{part_number}}}\n{user} | "
+            current_chunk = template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━\n{user} | "
 
     if current_chunk != template + f"\n- {{{part_number}}}\n":
         current_chunk = current_chunk.rstrip(" | ")
@@ -687,13 +687,18 @@ def process_deduction(message):
 
 @bot.message_handler(func=lambda m: m.text == "➕ إضافة قالب")
 def ask_for_new_template(message):
-    msg = bot.reply_to(message, "✏️ أرسل النص الجديد للقالب:")
+    msg = bot.reply_to(message, "أرسل النص الجديد للقالب ✏️ (يجب أن يكون في سطر واحد):")
     bot.register_next_step_handler(msg, save_new_template)
 
 def save_new_template(message):
     new_template = message.text.strip()
+    
     if not new_template:
         bot.reply_to(message, "❗ لم يتم إرسال أي نص")
+        return
+
+    if "\n" in new_template:
+        bot.reply_to(message, "⚠️ يجب أن يكون القالب في سطر واحد فقط، بدون أسطر جديدة.")
         return
 
     add_new_template(new_template)
