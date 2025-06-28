@@ -84,8 +84,8 @@ def display_points(chat_id: str) -> str:
 
     MAX_LENGTH = 200
     result = []
-    current_chunk = template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━\n"
     part_number = 1
+    current_chunk = template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━\n"
 
     for user in users:
         user_entry = f"{user} | "
@@ -99,7 +99,7 @@ def display_points(chat_id: str) -> str:
             part_number += 1
             current_chunk = template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━\n{user} | "
 
-    if current_chunk != template + f"\n- {{{part_number}}}\n":
+    if current_chunk.strip() != template + f"\n━━━━━━━⋆{part_number}⋆━━━━━━━":
         current_chunk = current_chunk.rstrip(" | ")
         result.append(current_chunk)
 
